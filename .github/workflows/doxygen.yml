@@ -1,0 +1,43 @@
+name: Generate Doxygen documentation
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  docs:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Doxygen
+        run: sudo apt-get update && sudo apt-get install -y doxygen
+
+      - name: Generate Doxyfile if missing
+        working-directory: laboratories/cicd-documentation
+        run: |
+          if [ ! -f Doxyfile ]; then
+            doxygen -g
+          fi
+
+      - name: Configure Doxygen
+        working-directory: laboratories/cicd-documentation
+        run: |
+          sed -i 's/^PROJECT_NAME.*/PROJECT_NAME = "CICD Documentation"/' Doxyfile
+          sed -i 's/^INPUT.*/INPUT = ./' Doxyfile
+          sed -i 's/^RECURSIVE.*/RECURSIVE = YES/' Doxyfile
+          sed -i 's/^EXTRACT_ALL.*/EXTRACT_ALL = YES/' Doxyfile
+          sed -i 's/^GENERATE_HTML.*/GENERATE_HTML = YES/' Doxyfile
+
+      - name: Run Doxygen
+        working-directory: laboratories/cicd-documentation
+        run: doxygen Doxyfile
+
+      - name: Upload documentation artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: doxygen-html
+          path: laboratories/cicd-documentation/html/
